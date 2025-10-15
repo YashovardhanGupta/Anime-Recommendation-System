@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Recommendation System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        .card {
+            background-color: #2d3748;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .placeholder-img {
+            background-color: #4a5568;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            color: #a0aec0;
+        }
+        .loader {
+            border: 4px solid #4a5568;
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-5xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Anime Recommendation System</h1>
+            <p class="text-lg text-gray-400">Find your next favorite show based on your current one.</p>
+        </header>
+
+        <main>
+            <!-- Search Input Section -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-10">
+                <div class="relative flex-grow">
+                    <input type="text" id="anime-input" list="anime-list" placeholder="e.g., Attack on Titan, Death Note, Naruto" class="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300">
+                    <datalist id="anime-list"></datalist>
+                </div>
+                <button id="recommend-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Get Recommendations
+                </button>
+            </div>
+            
+            <!-- Message and Loader Section -->
+            <div id="message-area" class="text-center min-h-[60px] flex items-center justify-center"></div>
+
+            <!-- Recommendations Section -->
+            <div id="recommendations-container" class="mt-8">
+                 <h2 id="results-title" class="text-2xl font-bold text-white mb-6 text-center hidden">Top Recommendations</h2>
+                 <div id="recommendations" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <!-- Recommendation cards will be inserted here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const animeInput = document.getElementById('anime-input');
+            const recommendBtn = document.getElementById('recommend-btn');
+            const recommendationsDiv = document.getElementById('recommendations');
+            const resultsTitle = document.getElementById('results-title');
+            const messageArea = document.getElementById('message-area');
+            const animeDatalist = document.getElementById('anime-list');
+            
+            // Define the base URL for your Flask API
+            const API_URL = 'http://127.0.0.1:5000';
+
+            // --- Function to fetch the list of all anime and populate the datalist ---
+            const populateAnimeList = async () => {
+                try {
+                    const response = await fetch(`${API_URL}/anime-list`);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const animeList = await response.json();
+                    
+                    animeDatalist.innerHTML = ''; // Clear existing options
+                    animeList.forEach(anime => {
+                        const option = document.createElement('option');
+                        option.value = anime;
+                        animeDatalist.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Failed to fetch anime list:', error);
+                    displayMessage('Could not connect to the recommendation server. Make sure it is running.', 'error');
+                }
+            };
+            
+            // --- Main function to get recommendations ---
+            const getRecommendations = async () => {
+                const query = animeInput.value.trim();
+                
+                // Clear previous state
+                recommendationsDiv.innerHTML = '';
+                messageArea.innerHTML = '';
+                resultsTitle.classList.add('hidden');
+
+                if (!query) {
+                    displayMessage('Please enter an anime title.', 'error');
+                    return;
+                }
+
+                displayLoader();
+
+                try {
+                    // Use the browser's Fetch API to call your backend
+                    const response = await fetch(`${API_URL}/recommend?anime_title=${encodeURIComponent(query)}`);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const results = await response.json();
+                    displayResults(results, query);
+
+                } catch (error) {
+                    console.error('Error fetching recommendations:', error);
+                    displayMessage(`Error: ${error.message}`, 'error');
+                }
+            };
+            
+            const displayLoader = () => {
+                messageArea.innerHTML = '<div class="loader"></div>';
+            };
+
+            const displayMessage = (text, type = 'info') => {
+                const color = type === 'error' ? 'text-red-400' : 'text-gray-400';
+                messageArea.innerHTML = `<p class="${color} text-lg">${text}</p>`;
+            };
+
+            const displayResults = (results, query) => {
+                messageArea.innerHTML = '';
+                resultsTitle.textContent = `Because you watched "${query}"`;
+                resultsTitle.classList.remove('hidden');
+                
+                if (results.length === 0) {
+                    displayMessage(`No recommendations found for "${query}".`, 'info');
+                    return;
+                }
+                
+                results.forEach(anime => {
+                    const card = document.createElement('div');
+                    card.className = 'card rounded-lg overflow-hidden shadow-lg';
+                    
+                    const placeholderText = anime.split(' ').map(word => word[0]).join('').substring(0, 3).toUpperCase();
+                    
+                    card.innerHTML = `
+                        <div class="w-full h-48 placeholder-img text-3xl">
+                           ${placeholderText}
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-lg text-white">${anime}</h3>
+                        </div>
+                    `;
+                    recommendationsDiv.appendChild(card);
+                });
+            };
+
+            // --- Event Listeners ---
+            recommendBtn.addEventListener('click', getRecommendations);
+            animeInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    getRecommendations();
+                }
+            });
+
+            // --- Initial Load ---
+            // Fetch the anime list when the page loads to populate search suggestions
+            populateAnimeList();
+        });
+    </script>
+</body>
+</html>
+
