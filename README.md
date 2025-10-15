@@ -42,7 +42,6 @@ Here is an overview of the project's file structure:
     ├── 📄 anime_cleaned.csv
     ├── 📄 cosine_sim.npy
     ├── 📄 index.html
-    ├── 📄 instructions.md
     └── 📄 README.md
 
 `Anime-Recommendation-System.ipynb`: The original Jupyter Notebook containing all the data cleaning, analysis, and model building steps (TF-IDF and Cosine Similarity).
@@ -133,5 +132,6 @@ Simply open the `index.html` file in your web browser. The application will auto
 2. **Frontend**: When the `index.html` page loads, it calls the `/anime-list` endpoint to populate the search options. When a user searches for an anime, a `fetch` request is sent to the `/recommend` endpoint. The returned JSON data is then dynamically rendered as recommendation cards on the page.
 
 # Data Source
+
 
 The dataset used for this project is the **Anime Dataset 2023** from [Kaggle](https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset/data), which contains information on thousands of anime and user details.
