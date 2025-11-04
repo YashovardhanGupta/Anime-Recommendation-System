@@ -1,4 +1,4 @@
-# Hybrid Anime Recommendation System
+# Anime Recommendation System
 
 A full-stack web application that provides personalized anime recommendations. This project uses a content-based filtering model built in a **Jupyter Notebook**, served via a **Python Flask API**, and presented through a clean, interactive **HTML/JavaScript** front-end.
 
@@ -150,3 +150,4 @@ Recommendations:
 # Data Source
 
 The dataset used for this project is the **Anime Dataset 2023** from [Kaggle](https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset/data), which contains information on thousands of anime and user details.
+
